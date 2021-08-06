@@ -1,6 +1,7 @@
 <script>
     import Drag from "./Drag.svelte";
     import { createEventDispatcher } from "svelte";
+
     let dispatch = createEventDispatcher();
     export let id = 0;
     export let x = 100;
@@ -14,8 +15,15 @@
     export let borderWidth = 20;
     export let visible = true;
     export let isMax = false;
-    export let isInFocus = false;
     export let zLevel = 0;
+    export let content = undefined;
+    export let contentProps;
+
+    $: (zLevel) => {
+        if (zLevel == 1) {
+            dispatch("clicked", {});
+        }
+    };
 
     const makeMax = () => {
         current = {
@@ -49,7 +57,6 @@
         width,
         height,
     };
-    // function to add two nums
 
     let borderstyles = new Array(4).fill(0);
 
@@ -154,10 +161,7 @@
             }, '')};
     border-style: solid; 
     border-color: white;
-    opacity: {zLevel}
-    
-    
-    "
+    opacity: {zLevel};"
         class="window"
         on:mousedown={(e) => {
             dispatch("clicked", {});
@@ -180,40 +184,78 @@
             }
         }}
     >
-        <div class="drag-container">
-            <Drag bind:x bind:y />
+        <div class="inner">
+            <div class="drag-container">
+                <Drag bind:x bind:y />
+            </div>
+            <div class="buttons">
+                <button class="minimize" on:click={handleMinimize}>
+                    minimize</button
+                >
+                <button class="maximize" on:click={handleMaximize}>
+                    maximize</button
+                >
+                <button class="close" on:click={handleClose}> close</button>
+            </div>
+            <h1>{id}</h1>
+
+            <svelte:component this={content} {...contentProps} />
         </div>
-        <div class="buttons">
-            <button class="minimize" on:click={handleMinimize}>
-                minimize</button
-            >
-            <button class="maximize" on:click={handleMaximize}>
-                maximize</button
-            >
-            <button class="close" on:click={handleClose}> close</button>
-        </div>
-        <h1>{id}</h1>
     </div>
 {/if}
 
 <style>
+    .inner {
+        margin: 5% 5%;
+        /* border-width: 10px;
+        border-color: red;
+        border-style: solid; */
+        /* max-width: 80%;
+        max-height: 80%; */
+        height: 90%;
+        width: 90%;
+        top: -0%;
+        left:-0%;
+        position: absolute;
+        background-color: purple;
+        overflow: scroll;
+    }
     .buttons {
-        margin-top: 100px;
+        margin-top: 10px;
         display: flex;
+        /* overflow: hidden; */
     }
     .maximize {
         /* margin: 100px; */
     }
     .window {
-        width: 200px;
-        height: 200px;
+        user-select: none;
+        z-index: 99999999999999999999999999999999999999999999999999999;
         background-color: green;
         position: absolute;
+        color: white;
+        overflow: none;
     }
     .drag-container {
-        width: 80%;
-        height: 20%;
-        margin: 10%;
-        position: absolute;
+        width: 100%;
+        height: 20px;
+        //margin-top: 5px;
+    }
+
+    /* Works on Chrome, Edge, and Safari */
+    *::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+        overflow: visible;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: white;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background-color: blue;
+        border-radius: 20px;
+        border: 3px solid white;
     }
 </style>

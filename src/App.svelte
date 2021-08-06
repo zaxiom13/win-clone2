@@ -1,27 +1,41 @@
 <script>
   import Window from "./lib/Window.svelte";
+  
+  import compA from "./lib/CompA.svelte";
 
   let windowTilesProps = [
-    { tileType: Window, visible: true },
-    { tileType: Window, visible: true },
-    { tileType: Window, visible: true },
-    { tileType: Window, visible: false },
+    {
+      content: compA,
+      contentProps: { propA: "propAafkjsldfkjsdlfij" },
+      visible: true,
+    },
+    { content: compA, contentProps: { propA: "propA" }, visible: true },
+    { content: compA, contentProps: { propA: "propA" }, visible: true },
+    { content: compA, contentProps: { propA: "propA" }, visible: false },
   ].map((i, index) => {
     return { ...i, id: index };
   });
 
-  let visibleItems = [];
+  let menu = ["item1", "item2", "item3", "item4", "item5"];
+  let isShowMenu = false;
+
+  let visibleItems = windowTilesProps.filter((i) => i.visible);
   $: visibleItems = windowTilesProps.filter((i) => i.visible);
 
   const createNewTile = () => {
     windowTilesProps = [
       ...windowTilesProps,
       {
-        tileType: Window,
+        content: undefined,
+        contentProps: { propA: undefined },
         visible: true,
         id: Math.max(...windowTilesProps.map((i) => i.id)) + 1,
       },
     ];
+  };
+
+  const showMenu = () => {
+    isShowMenu = !isShowMenu;
   };
 
   const moveItemToLast = (index) => {
@@ -45,12 +59,13 @@
 
 <section class="main">
   {#each windowTilesProps as props, index (props.id)}
-    <svelte:component
-      this={props.tileType}
+    <Window
       on:clicked={() => {
         moveItemToLast(props.id);
         windowTilesProps = windowTilesProps;
       }}
+      content={props.content}
+      contentProps={props.contentProps}
       bind:visible={props.visible}
       zLevel={Math.max(((index + 1) / visibleItems.length) ** 2, 0.3)}
       on:close={(e) => {
@@ -63,7 +78,23 @@
   {/each}
   <div class="icons" on:click={createNewTile}>icon</div>
   <div class="taskbar">
-    <div class="start-menu-button"><h1>start</h1></div>
+    <div
+      class="start-menu-button"
+      on:click={showMenu}
+      tabindex="-1"
+      on:blur={() => {
+        isShowMenu = false;
+      }}
+    >
+      <h1>start</h1>
+      {#if isShowMenu}
+        <div class="start-menu">
+          {#each menu as item}
+            <div class="start-menu-item" on:click={createNewTile}>{item}</div>
+          {/each}
+        </div>
+      {/if}
+    </div>
     {#each windowTilesProps as props, index (props.id)}
       {#if props.visible != true}
         <div class="minimised-tile" on:click={() => makeVisible(props.id)}>
@@ -77,6 +108,24 @@
 </section>
 
 <style>
+  .start-menu-item {
+    padding: 10px 70px;
+    background-color: red;
+    color: rgb(38, 38, 134);
+  }
+
+  .start-menu-item:hover {
+    background-color: white;
+  }
+
+  .start-menu {
+    display: flex;
+    flex-direction: column-reverse;
+    position: absolute;
+    bottom: 7vh;
+    width: 30px;
+    background-color: pink;
+  }
   .start-menu-button {
     width: 100px;
     color: green;
@@ -103,6 +152,7 @@
     flex-direction: row;
   }
   .main {
+    user-select: none;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
