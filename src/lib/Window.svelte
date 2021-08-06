@@ -1,5 +1,8 @@
 <script>
     import Drag from "./Drag.svelte";
+    import { createEventDispatcher } from "svelte";
+    let dispatch = createEventDispatcher();
+    export let id = 0;
     export let x = 100;
     export let y = 100;
     export let width = 200;
@@ -11,6 +14,8 @@
     export let borderWidth = 20;
     export let visible = true;
     export let isMax = false;
+    export let isInFocus = false;
+    export let zLevel = 0;
 
     const makeMax = () => {
         current = {
@@ -56,6 +61,11 @@
 
     const handleMinimize = (e) => {
         visible = !visible;
+        if (!visible) {
+            setCurrentPosition(e);
+        } else {
+            ({ x, y, width, height } = current);
+        }
     };
 
     const handleMaximize = () => {
@@ -65,6 +75,10 @@
         } else {
             returnToNorm();
         }
+    };
+
+    const handleClose = (e) => {
+        dispatch("close", { id });
     };
 </script>
 
@@ -128,6 +142,10 @@
 />
 {#if visible}
     <div
+        on:click={() => {
+            dispatch("clicked", {});
+        }}
+        id="window-container"
         style="top:{y}px; left:{x}px; width:{width}px; height:{height}px;  border-width: {borderstyles
             .map((a) => a + 'px ')
             .reduce((a, curr) => {
@@ -135,42 +153,46 @@
                 return a;
             }, '')};
     border-style: solid; 
-    border-color: white;"
+    border-color: white;
+    opacity: {zLevel}
+    
+    
+    "
         class="window"
         on:mousedown={(e) => {
-            if (e.offsetX < borderWidth) {
-                handleBorderDown(3, e);
-            }
-            if (e.offsetY < borderWidth) {
-                handleBorderDown(0, e);
-            }
-            if (e.offsetX > width - borderWidth) {
-                handleBorderDown(1, e);
-            }
-            if (e.offsetY > height - borderWidth) {
-                handleBorderDown(2, e);
+            dispatch("clicked", {});
+            if (
+                //@ts-ignore
+                e.target.id == document.getElementById("window-container").id
+            ) {
+                if (e.offsetX < borderWidth) {
+                    handleBorderDown(3, e);
+                }
+                if (e.offsetY < borderWidth) {
+                    handleBorderDown(0, e);
+                }
+                if (e.offsetX > width - borderWidth) {
+                    handleBorderDown(1, e);
+                }
+                if (e.offsetY > height - borderWidth) {
+                    handleBorderDown(2, e);
+                }
             }
         }}
     >
-        <div class="drag-container" on:mousedown|stopPropagation>
+        <div class="drag-container">
             <Drag bind:x bind:y />
         </div>
         <div class="buttons">
-            <button
-                class="minimize"
-                on:click={handleMinimize}
-                on:mousedown|stopPropagation
-            >
+            <button class="minimize" on:click={handleMinimize}>
                 minimize</button
             >
-            <button
-                class="maximize"
-                on:click={handleMaximize}
-                on:mousedown|stopPropagation
-            >
+            <button class="maximize" on:click={handleMaximize}>
                 maximize</button
             >
+            <button class="close" on:click={handleClose}> close</button>
         </div>
+        <h1>{id}</h1>
     </div>
 {/if}
 

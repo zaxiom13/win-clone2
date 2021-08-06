@@ -6,23 +6,70 @@
     { tileType: Window, visible: true },
     { tileType: Window, visible: true },
     { tileType: Window, visible: false },
-  ];
+  ].map((i, index) => {
+    return { ...i, id: index };
+  });
+
+  let visibleItems = [];
+  $: visibleItems = windowTilesProps.filter((i) => i.visible);
+
+  const createNewTile = () => {
+    windowTilesProps = [
+      ...windowTilesProps,
+      {
+        tileType: Window,
+        visible: true,
+        id: Math.max(...windowTilesProps.map((i) => i.id)) + 1,
+      },
+    ];
+  };
+
+  const moveItemToLast = (index) => {
+    windowTilesProps.push(
+      windowTilesProps.splice(
+        windowTilesProps.findIndex((v) => v.id == index),
+        1
+      )[0]
+    );
+  };
 
   const makeVisible = (index) => {
-    windowTilesProps[index].visible = true;
+    windowTilesProps[
+      windowTilesProps.findIndex((obj) => obj.id == index)
+    ].visible = true;
+
+    moveItemToLast(index);
   };
+  windowTilesProps = windowTilesProps;
 </script>
 
 <section class="main">
-  {#each windowTilesProps as props}
-    <svelte:component this={props.tileType} bind:visible={props.visible} />
+  {#each windowTilesProps as props, index (props.id)}
+    <svelte:component
+      this={props.tileType}
+      on:clicked={() => {
+        moveItemToLast(props.id);
+        windowTilesProps = windowTilesProps;
+      }}
+      bind:visible={props.visible}
+      zLevel={Math.max(((index + 1) / visibleItems.length) ** 2, 0.3)}
+      on:close={(e) => {
+        windowTilesProps = windowTilesProps.filter(
+          (item) => item.id !== e.detail.id
+        );
+      }}
+      id={props.id}
+    />
   {/each}
+  <div class="icons" on:click={createNewTile}>icon</div>
   <div class="taskbar">
-    <div class="start-menu-button" />
-    {#each windowTilesProps as props, index}
+    <div class="start-menu-button"><h1>start</h1></div>
+    {#each windowTilesProps as props, index (props.id)}
       {#if props.visible != true}
-        <div class="minimised-tile" on:click={() => makeVisible(index)}>
-          aadsdasd
+        <div class="minimised-tile" on:click={() => makeVisible(props.id)}>
+          <h1>
+            {props.id}
+          </h1>
         </div>
       {/if}
     {/each}
@@ -30,6 +77,18 @@
 </section>
 
 <style>
+  .start-menu-button {
+    width: 100px;
+    color: green;
+  }
+  .icons {
+    width: 100px;
+    height: 100px;
+    background-color: white;
+    position: absolute;
+    bottom: 300px;
+    left: 40px;
+  }
   .minimised-tile {
     width: 100px;
     height: 100%;
