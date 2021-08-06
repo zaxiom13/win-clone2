@@ -10,6 +10,22 @@
     export let maxHeight = 300;
     export let borderWidth = 20;
     export let visible = true;
+    export let isMax = false;
+
+    const makeMax = () => {
+        current = {
+            x,
+            y,
+            width,
+            height,
+        };
+        width = maxWidth;
+        height = maxHeight;
+    };
+
+    const returnToNorm = () => {
+        ({ width, height } = current);
+    };
 
     let borderDown = false;
 
@@ -41,6 +57,15 @@
     const handleMinimize = (e) => {
         visible = !visible;
     };
+
+    const handleMaximize = () => {
+        isMax = !isMax;
+        if (isMax) {
+            makeMax();
+        } else {
+            returnToNorm();
+        }
+    };
 </script>
 
 <svelte:window
@@ -50,6 +75,7 @@
     }}
     on:mousemove={(e) => {
         if (borderDown) {
+            isMax = false;
             let draggingHorizontal =
                 Math.sign(e.movementX) > 0 ? "right" : "left";
             let draggingVertical = Math.sign(e.movementY) > 0 ? "down" : "up";
@@ -129,19 +155,32 @@
         <div class="drag-container" on:mousedown|stopPropagation>
             <Drag bind:x bind:y />
         </div>
-        <button
-            class="minimize"
-            on:click={handleMinimize}
-            on:mousedown|stopPropagation
-        >
-            minimize</button
-        >
+        <div class="buttons">
+            <button
+                class="minimize"
+                on:click={handleMinimize}
+                on:mousedown|stopPropagation
+            >
+                minimize</button
+            >
+            <button
+                class="maximize"
+                on:click={handleMaximize}
+                on:mousedown|stopPropagation
+            >
+                maximize</button
+            >
+        </div>
     </div>
 {/if}
 
 <style>
-    .minimize {
-        margin: 100px;
+    .buttons {
+        margin-top: 100px;
+        display: flex;
+    }
+    .maximize {
+        /* margin: 100px; */
     }
     .window {
         width: 200px;
