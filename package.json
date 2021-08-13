@@ -13,5 +13,8 @@
     "svelte": "^3.35.0",
     "tailwindcss": "^2.0.4",
     "vite": "^2.1.0"
+  },
+  "dependencies": {
+    "xp.css": "^0.2.4"
   }
 }

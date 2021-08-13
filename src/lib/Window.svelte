@@ -1,11 +1,12 @@
 <script>
     import Drag from "./Drag.svelte";
+    import "xp.css/dist/XP.css";
     import { createEventDispatcher } from "svelte";
 
     let dispatch = createEventDispatcher();
     export let id = 0;
-    export let x = 100;
-    export let y = 100;
+    export let x = Math.random()*400;
+    export let y = Math.random()*400;
     export let width = 200;
     export let height = 200;
     export let minWidth = 100;
@@ -184,27 +185,37 @@
             }
         }}
     >
-        <div class="inner">
-            <div class="drag-container">
-                <Drag bind:x bind:y />
-            </div>
-            <div class="buttons">
-                <button class="minimize" on:click={handleMinimize}>
-                    minimize</button
-                >
-                <button class="maximize" on:click={handleMaximize}>
-                    maximize</button
-                >
-                <button class="close" on:click={handleClose}> close</button>
-            </div>
+    <div class="title-bar">
+        <Drag bind:x bind:y >
+
+           
+                <div class="title-bar-text name">A Title Bar</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize" on:click={handleMinimize}></button>
+                    <button aria-label="Maximize" on:click={handleMaximize}></button>
+                    <button aria-label="Close" on:click={handleClose}></button>
+                </div>
+                
+            </Drag>
+        </div>
+     
+         
+            
+           
             <h1>{id}</h1>
 
             <svelte:component this={content} {...contentProps} />
-        </div>
+        
     </div>
 {/if}
 
 <style>
+    .name{
+        display: flex;
+        flex-grow:1;
+    }
+
+
     .inner {
         margin: 5% 5%;
         /* border-width: 10px;
@@ -231,10 +242,10 @@
     .window {
         user-select: none;
         z-index: 99999999999999999999999999999999999999999999999999999;
-        background-color: green;
+        background-color: purple;
         position: absolute;
         color: white;
-        overflow: none;
+        overflow: scroll;
     }
     .drag-container {
         width: 100%;

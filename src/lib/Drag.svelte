@@ -26,7 +26,6 @@
   class="drag"
   on:mousedown={() => {
     mousedown = true;
-     
   }}
   on:dragstart={() => {
     return false;
@@ -34,14 +33,14 @@
   on:drop={() => {
     return false;
   }}
-/>
+>
+  <slot />
+</div>
 
 <style>
   .drag {
     display: flex;
     width: 100%;
     height: 100%;
-
-    background-color: red;
   }
 </style>
