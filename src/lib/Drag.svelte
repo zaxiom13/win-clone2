@@ -1,16 +1,16 @@
 <script>
   export let x = 100;
   export let y = 100;
-  let width = 100;
-  let height = 100;
+  let currentX = 100;
+  let currentY = 100;
   let mousedown = false;
 </script>
 
 <svelte:window
   on:mousemove={(e) => {
     if (mousedown) {
-      x = e.x - width / 2;
-      y = e.y - height / 2;
+      x = e.x - currentX;
+      y = e.y - currentY;
     }
   }}
   on:mouseup={() => {
@@ -24,7 +24,9 @@
 
 <div
   class="drag"
-  on:mousedown={() => {
+  on:mousedown={(e) => {
+    currentX = e.x - x;
+    currentY = e.y - y;
     mousedown = true;
   }}
   on:dragstart={() => {
@@ -42,5 +44,6 @@
     display: flex;
     width: 100%;
     height: 100%;
+    position: relative;
   }
 </style>

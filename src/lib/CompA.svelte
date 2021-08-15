@@ -15,7 +15,6 @@
 
     var dz;
 
-    export let propA;
 
     setInterval(() => {
         dx = sigma * (y - x) * dt;

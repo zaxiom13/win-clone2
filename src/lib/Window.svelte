@@ -5,17 +5,17 @@
 
     let dispatch = createEventDispatcher();
     export let id = 0;
-    export let x = Math.random()*400;
-    export let y = Math.random()*400;
-    export let width = 200;
-    export let height = 200;
-    export let minWidth = 100;
-    export let minHeight = 100;
-    export let maxWidth = 300;
-    export let maxHeight = 300;
-    export let borderWidth = 20;
+    let x = Math.random() * 400;
+    let y = Math.random() * 400;
+    let minWidth = 200;
+    let minHeight = 300;
+    let width = minWidth;
+    let height = minHeight;
+    let maxWidth = 400;
+    let maxHeight = 400;
+    let borderWidth = 10;
     export let visible = true;
-    export let isMax = false;
+    let isMax = false;
     export let zLevel = 0;
     export let content = undefined;
     export let contentProps;
@@ -59,10 +59,10 @@
         height,
     };
 
-    let borderstyles = new Array(4).fill(0);
+    let borderstyles = new Array(4).fill("0831d9");
 
     const handleBorderDown = (num, e) => {
-        borderstyles[num] = "2";
+        borderstyles[num] = "white";
         borderDown = true;
         setCurrentPosition(e);
     };
@@ -92,16 +92,18 @@
 
 <svelte:window
     on:mouseup={() => {
-        borderstyles = borderstyles.map(() => 0);
+        borderstyles = borderstyles.map(() => "#0831d9");
         borderDown = false;
     }}
     on:mousemove={(e) => {
         if (borderDown) {
-            isMax = false;
+            let rx = Math.round(x);
+            let ry = Math.round(y);
+            let curr = { rx, ry, width, height };
             let draggingHorizontal =
                 Math.sign(e.movementX) > 0 ? "right" : "left";
             let draggingVertical = Math.sign(e.movementY) > 0 ? "down" : "up";
-            if (borderstyles[3]) {
+            if (borderstyles[3] == "white") {
                 if (
                     (draggingHorizontal == "left" && width < maxWidth) ||
                     (draggingHorizontal == "right" && width > minWidth)
@@ -109,20 +111,20 @@
                     x += e.x - current.x;
                     width -= e.x - current.x;
                 } else {
-                    borderstyles = new Array(4).fill(0);
+                    borderstyles = new Array(4).fill("#0831d9");
                 }
             }
-            if (borderstyles[1]) {
+            if (borderstyles[1] == "white") {
                 if (
                     (draggingHorizontal == "left" && width > minWidth) ||
                     (draggingHorizontal == "right" && width < maxWidth)
                 ) {
                     width += e.movementX;
                 } else {
-                    borderstyles = new Array(4).fill(0);
+                    borderstyles = new Array(4).fill("#0831d9");
                 }
             }
-            if (borderstyles[0]) {
+            if (borderstyles[0] == "white") {
                 if (
                     (draggingVertical == "up" && height < maxHeight) ||
                     (draggingVertical == "down" && height > minHeight)
@@ -130,20 +132,24 @@
                     y += e.y - current.y;
                     height -= e.y - current.y;
                 } else {
-                    borderstyles = new Array(4).fill(0);
+                    borderstyles = new Array(4).fill("#0831d9");
                 }
             }
-            if (borderstyles[2]) {
+            if (borderstyles[2] == "white") {
                 if (
                     (draggingVertical == "up" && height > minHeight) ||
                     (draggingVertical == "down" && height < maxHeight)
                 ) {
                     height += e.movementY;
                 } else {
-                    borderstyles = new Array(4).fill(0);
+                    borderstyles = new Array(4).fill("0831d9");
                 }
             }
-
+            rx = Math.round(x);
+            ry = Math.round(y);
+            if (curr != { rx, ry, width, height }) {
+                isMax = false;
+            }
             current = { x, y, width, height };
         }
     }}
@@ -154,18 +160,18 @@
             dispatch("clicked", {});
         }}
         id="window-container"
-        style="top:{y}px; left:{x}px; width:{width}px; height:{height}px;  border-width: {borderstyles
-            .map((a) => a + 'px ')
-            .reduce((a, curr) => {
-                a += curr;
-                return a;
-            }, '')};
+        style="top:{y}px; left:{x}px; width:{width}px; height:{height + 10}px; 
     border-style: solid; 
-    border-color: white;
-    opacity: {zLevel};"
+    border-width: 4px;
+    border-right-color: {borderstyles[1]};
+    border-left-color: {borderstyles[3]};
+    border-top-color: {borderstyles[0]};
+    border-bottom-color: {borderstyles[2]};
+    filter: brightness({zLevel * 100}%);"
         class="window"
         on:mousedown={(e) => {
-            dispatch("clicked", {});
+            // current = { x, y, width, height };
+            //dispatch("clicked", {});
             if (
                 //@ts-ignore
                 e.target.id == document.getElementById("window-container").id
@@ -185,80 +191,81 @@
             }
         }}
     >
-    <div class="title-bar">
-        <Drag bind:x bind:y >
-
-           
-                <div class="title-bar-text name">A Title Bar</div>
-                <div class="title-bar-controls">
-                    <button aria-label="Minimize" on:click={handleMinimize}></button>
-                    <button aria-label="Maximize" on:click={handleMaximize}></button>
-                    <button aria-label="Close" on:click={handleClose}></button>
+        <div class="title-bar">
+            <Drag bind:x bind:y>
+                <div on:dblclick={handleMaximize} class="title-bar-text name">
+                    A Title Bar
                 </div>
-                
             </Drag>
+            <div class="title-bar-controls">
+                <button aria-label="Minimize" on:click={handleMinimize} />
+                <button aria-label="Maximize" on:click={handleMaximize} />
+                <button aria-label="Close" on:click={handleClose} />
+            </div>
         </div>
-     
-         
-            
-           
-            <h1>{id}</h1>
 
-            <svelte:component this={content} {...contentProps} />
-        
+        <!-- <h1>{id}</h1> -->
+        <div class="window-body" id="window-body">
+            <svelte:component
+                this={content}
+                on:mounted={(e) => {
+                    maxHeight = e.detail.maxHeight;
+                    maxWidth = e.detail.maxWidth;
+                    minHeight = e.detail.minHeight;
+                    minWidth = e.detail.minWidth;
+                    height = minHeight;
+                    width = minWidth;
+                }}
+                {...contentProps}
+            />
+        </div>
     </div>
 {/if}
 
 <style>
-    .name{
+    .container {
+        background-color: red;
+        height: 84%;
+        overflow: hidden;
+    }
+    .container > * {
+        background-color: red;
+        height: 84%;
+        overflow: hidden;
+    }
+    .name {
         display: flex;
-        flex-grow:1;
+        flex-grow: 1;
+        overflow: hidden;
+        padding-top: 4px;
+        height: 20px;
     }
 
-
-    .inner {
-        margin: 5% 5%;
-        /* border-width: 10px;
-        border-color: red;
-        border-style: solid; */
-        /* max-width: 80%;
-        max-height: 80%; */
-        height: 90%;
-        width: 90%;
-        top: -0%;
-        left:-0%;
-        position: absolute;
-        background-color: purple;
-        overflow: scroll;
-    }
-    .buttons {
-        margin-top: 10px;
-        display: flex;
-        /* overflow: hidden; */
-    }
-    .maximize {
-        /* margin: 100px; */
-    }
     .window {
         user-select: none;
         z-index: 99999999999999999999999999999999999999999999999999999;
-        background-color: purple;
+        /* background-color: purple; */
         position: absolute;
         color: white;
-        overflow: scroll;
-    }
-    .drag-container {
-        width: 100%;
-        height: 20px;
-        //margin-top: 5px;
+        overflow: hidden;
+        padding: 4px;
     }
 
-    /* Works on Chrome, Edge, and Safari */
-    *::-webkit-scrollbar {
+    .window-body {
+        overflow: hidden;
+        width: 96%;
+        height: 89.5%;
+        color: black;
+        /* margin:2%; */
+    }
+    ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
         overflow: visible;
     }
+
+    /* Works on Chrome, Edge, and Safari
+   
 
     *::-webkit-scrollbar-track {
         background: white;
@@ -268,5 +275,5 @@
         background-color: blue;
         border-radius: 20px;
         border: 3px solid white;
-    }
+    } */
 </style>

@@ -1,17 +1,18 @@
 <script>
   import Window from "./lib/Window.svelte";
-  
+
   import compA from "./lib/CompA.svelte";
+  import compB from "./lib/CompB.svelte";
 
   let windowTilesProps = [
     {
-      content: compA,
+      content: compB,
       contentProps: { propA: "propAafkjsldfkjsdlfij" },
       visible: true,
     },
     { content: compA, contentProps: { propA: "propA" }, visible: true },
     { content: compA, contentProps: { propA: "propA" }, visible: true },
-    { content: compA, contentProps: { propA: "propA" }, visible: false },
+    { content: compB, contentProps: {}, visible: false },
   ].map((i, index) => {
     return { ...i, id: index };
   });
@@ -45,14 +46,36 @@
         1
       )[0]
     );
+    windowTilesProps = windowTilesProps;
+  };
+  const moveItemToFirst = (index) => {
+    windowTilesProps.sort((a, b) => (a.id == index ? -1 : 1));
+    windowTilesProps = windowTilesProps;
   };
 
   const makeVisible = (index) => {
-    windowTilesProps[
-      windowTilesProps.findIndex((obj) => obj.id == index)
-    ].visible = true;
+    console.log(index);
+    let currentlyInFocus =
+      windowTilesProps[windowTilesProps.length - 1].id == index;
+    console.log(windowTilesProps[windowTilesProps.length - 1].id);
+    console.log(currentlyInFocus);
+    let vis =
+      windowTilesProps[windowTilesProps.findIndex((obj) => obj.id == index)]
+        .visible;
 
-    moveItemToLast(index);
+    if (!currentlyInFocus && vis) {
+      moveItemToLast(index);
+    } else if (currentlyInFocus) {
+      windowTilesProps[
+        windowTilesProps.findIndex((obj) => obj.id == index)
+      ].visible = false;
+      moveItemToFirst(index);
+    } else if (!vis) {
+      windowTilesProps[
+        windowTilesProps.findIndex((obj) => obj.id == index)
+      ].visible = true;
+      moveItemToLast(index);
+    }
   };
   windowTilesProps = windowTilesProps;
 </script>
@@ -67,7 +90,7 @@
       content={props.content}
       contentProps={props.contentProps}
       bind:visible={props.visible}
-      zLevel={Math.max(((index + 1) / visibleItems.length) ** 2, 0.3)}
+      zLevel={index + 1 == windowTilesProps.length ? 1 : 0.6}
       on:close={(e) => {
         windowTilesProps = windowTilesProps.filter(
           (item) => item.id !== e.detail.id
@@ -86,7 +109,7 @@
         isShowMenu = false;
       }}
     >
-      <h1>start</h1>
+      <h2>start</h2>
       {#if isShowMenu}
         <div class="start-menu">
           {#each menu as item}
@@ -95,14 +118,14 @@
         </div>
       {/if}
     </div>
-    {#each windowTilesProps as props, index (props.id)}
-      {#if props.visible != true}
-        <div class="minimised-tile" on:click={() => makeVisible(props.id)}>
-          <h1>
-            {props.id}
-          </h1>
+    {#each windowTilesProps.slice().sort((a, b) => {
+      return a.id > b.id ? 1 : -1;
+    }) as props, index (props.id)}
+      <div class="minimised-tile" on:click={() => makeVisible(props.id)}>
+        <div>
+          {props.id}
         </div>
-      {/if}
+      </div>
     {/each}
   </div>
 </section>
@@ -143,6 +166,8 @@
     height: 100%;
     margin-right: 30px;
     background-color: bisque;
+    font-size: 12px;
+    color: black;
   }
   .taskbar {
     width: 100%;
