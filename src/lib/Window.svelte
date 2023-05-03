@@ -1,279 +1,221 @@
+<svelte:options immutable={true} />
 <script>
-    import Drag from "./Drag.svelte";
-    import "xp.css/dist/XP.css";
-    import { createEventDispatcher } from "svelte";
+    import TitleBar from "./TitleBar.svelte";
+    import { close } from "../store.js";
 
-    let dispatch = createEventDispatcher();
+
+    export let title = "Untitled - Notepad";
     export let id = 0;
-    let x = Math.random() * 400;
-    let y = Math.random() * 400;
-    let minWidth = 200;
-    let minHeight = 300;
-    let width = minWidth;
-    let height = minHeight;
-    let maxWidth = 400;
-    let maxHeight = 400;
-    let borderWidth = 10;
-    export let visible = true;
-    let isMax = false;
-    export let zLevel = 0;
-    export let content = undefined;
-    export let contentProps;
+    export let component = null;
 
-    $: (zLevel) => {
-        if (zLevel == 1) {
-            dispatch("clicked", {});
+    // we want position and size to be dynamic
+    // so we'll use variables
+    let x = 0;
+    let y = 0;
+    let width = 600;
+    let height = 200;
+
+    // now let's make the window draggable
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    // now let's make the window resizable
+    let isResizing = "center";
+    let startWidth = 0;
+    let startHeight = 0;
+
+    // set a minimum size
+    const minWidth = 300;
+    const minHeight = 200;
+
+    function handleMousedown(event) {
+        // set dragging to true
+        event = event.detail;
+        isDragging = true;
+        // set the offset
+        startX = event.offsetX;
+        startY = event.offsetY;
+    }
+
+    function handleMousemove(event) {
+        if (isResizing !== "center") {
+            // prevent text selection during drag
+            event.preventDefault();
+
+            // resize based on the direction
+            let newHeight;
+            let newWidth;
+            if (isResizing.includes("top")) {
+                newHeight = startHeight - (event.clientY - startY);
+                if (
+                    newHeight < minHeight ||
+                    (y + newHeight > window.innerHeight && newHeight > height)
+                )
+                    return;
+                y = event.clientY;
+                height = newHeight;
+            }
+            if (isResizing.includes("bottom")) {
+                newHeight = startHeight + (event.clientY - startY);
+                if (
+                    newHeight < minHeight ||
+                    (y + height > window.innerHeight - 60 && newHeight > height)
+                )
+                    return;
+                height = newHeight;
+            }
+            if (isResizing.includes("left")) {
+                newWidth = startWidth - (event.clientX - startX);
+                if (
+                    newWidth < minWidth ||
+                    (x + newWidth > window.innerWidth && newWidth > width)
+                )
+                    return;
+                x = event.clientX;
+                width = newWidth;
+            }
+            if (isResizing.includes("right")) {
+                newWidth = startWidth + (event.clientX - startX);
+                if (
+                    newWidth < minWidth ||
+                    (x + width > window.innerWidth && newWidth > width)
+                )
+                    return;
+                width = newWidth;
+            }
+            return;
+        } else if (isDragging) {
+            x = Math.min(
+                Math.max(event.clientX - startX, 0),
+                window.innerWidth - width
+            );
+            y = Math.min(
+                Math.max(event.clientY - startY, 0),
+                window.innerHeight - height - 60
+            );
+            return;
         }
-    };
+    }
 
-    const makeMax = () => {
-        current = {
-            x,
-            y,
-            width,
-            height,
-        };
-        width = maxWidth;
-        height = maxHeight;
-    };
+    function handleMouseup(event) {
+        // set dragging to false
+        isDragging = false;
+        startX = 0;
+        startY = 0;
+        startHeight = 0;
+        startWidth = 0;
+        isResizing = "center";
+    }
 
-    const returnToNorm = () => {
-        ({ width, height } = current);
-    };
+    function handleMousedownResize(event) {
+        // set dragging to true
+        console.log("mousedownResize");
+        console.log(event);
+        // check if the mouse is in any of the resize areas
+        // if so, set isResizing to true
 
-    let borderDown = false;
-
-    const setCurrentPosition = (/** @type {{ x: any; y: any; }} */ e) => {
-        current = {
-            x: e.x,
-            y: e.y,
-            width,
-            height,
-        };
-    };
-
-    let current = {
-        x,
-        y,
-        width,
-        height,
-    };
-
-    let borderstyles = new Array(4).fill("0831d9");
-
-    const handleBorderDown = (num, e) => {
-        borderstyles[num] = "white";
-        borderDown = true;
-        setCurrentPosition(e);
-    };
-
-    const handleMinimize = (e) => {
-        visible = !visible;
-        if (!visible) {
-            setCurrentPosition(e);
-        } else {
-            ({ x, y, width, height } = current);
+        isResizing = getCompassDirectionAndNearEdge(event);
+        console.log(isResizing);
+        // set the offset
+        if (isResizing === "center") {
+            return;
         }
-    };
+        startWidth = width;
+        startHeight = height;
+        startX = event.clientX;
+        startY = event.clientY;
+    }
 
-    const handleMaximize = () => {
-        isMax = !isMax;
-        if (isMax) {
-            makeMax();
-        } else {
-            returnToNorm();
+    function getCompassDirectionAndNearEdge(event) {
+        // bounding box of the element
+        const rect = event.target.getBoundingClientRect();
+        // width and height of the element
+        const w = width;
+        const h = height;
+
+        // use the natural offset of the mouse
+        const x = event.offsetX;
+        const y = event.offsetY;
+
+        const tolerance = 20;
+        const isNearLeft = x < tolerance;
+        const isNearRight = w - x < tolerance;
+        const isNearTop = y < tolerance;
+        const isNearBottom = h - y < tolerance;
+        const isNearTopLeft = isNearLeft && isNearTop;
+        const isNearTopRight = isNearRight && isNearTop;
+        const isNearBottomLeft = isNearLeft && isNearBottom;
+        const isNearBottomRight = isNearRight && isNearBottom;
+        const isNearLeftEdge = isNearLeft && !isNearTop && !isNearBottom;
+        const isNearRightEdge = isNearRight && !isNearTop && !isNearBottom;
+        const isNearTopEdge = isNearTop && !isNearLeft && !isNearRight;
+        const isNearBottomEdge = isNearBottom && !isNearLeft && !isNearRight;
+        const isNearCenter =
+            !isNearLeft && !isNearRight && !isNearTop && !isNearBottom;
+        if (isNearTopLeft) {
+            return "top-left";
+        } else if (isNearTopRight) {
+            return "top-right";
+        } else if (isNearBottomLeft) {
+            return "bottom-left";
+        } else if (isNearBottomRight) {
+            return "bottom-right";
+        } else if (isNearLeftEdge) {
+            return "left";
+        } else if (isNearRightEdge) {
+            return "right";
+        } else if (isNearTopEdge) {
+            return "top";
+        } else if (isNearBottomEdge) {
+            return "bottom";
+        } else if (isNearCenter) {
+            return "center";
         }
-    };
+    }
 
-    const handleClose = (e) => {
-        dispatch("close", { id });
-    };
+    function closeWindow() {
+        console.log("close window");
+        close(id);
+    }
 </script>
 
-<svelte:window
-    on:mouseup={() => {
-        borderstyles = borderstyles.map(() => "#0831d9");
-        borderDown = false;
-    }}
-    on:mousemove={(e) => {
-        if (borderDown) {
-            let rx = Math.round(x);
-            let ry = Math.round(y);
-            let curr = { rx, ry, width, height };
-            let draggingHorizontal =
-                Math.sign(e.movementX) > 0 ? "right" : "left";
-            let draggingVertical = Math.sign(e.movementY) > 0 ? "down" : "up";
-            if (borderstyles[3] == "white") {
-                if (
-                    (draggingHorizontal == "left" && width < maxWidth) ||
-                    (draggingHorizontal == "right" && width > minWidth)
-                ) {
-                    x += e.x - current.x;
-                    width -= e.x - current.x;
-                } else {
-                    borderstyles = new Array(4).fill("#0831d9");
-                }
-            }
-            if (borderstyles[1] == "white") {
-                if (
-                    (draggingHorizontal == "left" && width > minWidth) ||
-                    (draggingHorizontal == "right" && width < maxWidth)
-                ) {
-                    width += e.movementX;
-                } else {
-                    borderstyles = new Array(4).fill("#0831d9");
-                }
-            }
-            if (borderstyles[0] == "white") {
-                if (
-                    (draggingVertical == "up" && height < maxHeight) ||
-                    (draggingVertical == "down" && height > minHeight)
-                ) {
-                    y += e.y - current.y;
-                    height -= e.y - current.y;
-                } else {
-                    borderstyles = new Array(4).fill("#0831d9");
-                }
-            }
-            if (borderstyles[2] == "white") {
-                if (
-                    (draggingVertical == "up" && height > minHeight) ||
-                    (draggingVertical == "down" && height < maxHeight)
-                ) {
-                    height += e.movementY;
-                } else {
-                    borderstyles = new Array(4).fill("0831d9");
-                }
-            }
-            rx = Math.round(x);
-            ry = Math.round(y);
-            if (curr != { rx, ry, width, height }) {
-                isMax = false;
-            }
-            current = { x, y, width, height };
-        }
-    }}
-/>
-{#if visible}
-    <div
-        on:click={() => {
-            dispatch("clicked", {});
-        }}
-        id="window-container"
-        style="top:{y}px; left:{x}px; width:{width}px; height:{height + 10}px; 
-    border-style: solid; 
-    border-width: 4px;
-    border-right-color: {borderstyles[1]};
-    border-left-color: {borderstyles[3]};
-    border-top-color: {borderstyles[0]};
-    border-bottom-color: {borderstyles[2]};
-    filter: brightness({zLevel * 100}%);"
-        class="window"
-        on:mousedown={(e) => {
-            // current = { x, y, width, height };
-            //dispatch("clicked", {});
-            if (
-                //@ts-ignore
-                e.target.id == document.getElementById("window-container").id
-            ) {
-                if (e.offsetX < borderWidth) {
-                    handleBorderDown(3, e);
-                }
-                if (e.offsetY < borderWidth) {
-                    handleBorderDown(0, e);
-                }
-                if (e.offsetX > width - borderWidth) {
-                    handleBorderDown(1, e);
-                }
-                if (e.offsetY > height - borderWidth) {
-                    handleBorderDown(2, e);
-                }
-            }
-        }}
-    >
-        <div class="title-bar">
-            <Drag bind:x bind:y>
-                <div on:dblclick={handleMaximize} class="title-bar-text name">
-                    A Title Bar
-                </div>
-            </Drag>
-            <div class="title-bar-controls">
-                <button aria-label="Minimize" on:click={handleMinimize} />
-                <button aria-label="Maximize" on:click={handleMaximize} />
-                <button aria-label="Close" on:click={handleClose} />
-            </div>
-        </div>
+<!-- track mouse during drag -->
+<svelte:window on:mousemove={handleMousemove} on:mouseup={handleMouseup} />
+<!-- keyed svelte -->
 
-        <!-- <h1>{id}</h1> -->
-        <div class="window-body" id="window-body">
-            <svelte:component
-                this={content}
-                on:mounted={(e) => {
-                    maxHeight = e.detail.maxHeight;
-                    maxWidth = e.detail.maxWidth;
-                    minHeight = e.detail.minHeight;
-                    minWidth = e.detail.minWidth;
-                    height = minHeight;
-                    width = minWidth;
-                }}
-                {...contentProps}
-            />
+<div
+    class="window"
+    on:mousedown|self={handleMousedownResize}
+    style="left: {x}px; top: {y}px; width: {width}px; height: {height}px;"
+>
+    <div class="window-main">
+        <TitleBar title={title + " " + id} on:mouseDown={handleMousedown} on:close={closeWindow} />
+
+        <div class="content" style="height: {height - 30}px;">
+            <svelte:component this={component} />
         </div>
     </div>
-{/if}
+</div>
 
 <style>
-    .container {
-        background-color: red;
-        height: 84%;
-        overflow: hidden;
-    }
-    .container > * {
-        background-color: red;
-        height: 84%;
-        overflow: hidden;
-    }
-    .name {
-        display: flex;
-        flex-grow: 1;
-        overflow: hidden;
-        padding-top: 4px;
-        height: 20px;
-    }
-
-    .window {
-        user-select: none;
-        z-index: 99999999999999999999999999999999999999999999999999999;
-        /* background-color: purple; */
-        position: absolute;
-        color: white;
-        overflow: hidden;
-        padding: 4px;
-    }
-
-    .window-body {
-        overflow: hidden;
-        width: 96%;
-        height: 89.5%;
+    .content {
+        background: #d3d3d3;
         color: black;
-        /* margin:2%; */
     }
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-        overflow: visible;
-    }
-
-    /* Works on Chrome, Edge, and Safari
-   
-
-    *::-webkit-scrollbar-track {
-        background: white;
+    .window {
+        background: #fff;
+        border: 10px solid #c3c3c3;
+        border-radius: 0.3rem;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        position: absolute;
     }
 
-    *::-webkit-scrollbar-thumb {
-        background-color: blue;
-        border-radius: 20px;
-        border: 3px solid white;
-    } */
+    .content {
+        padding-block: 10px;
+        /* inherit the height of the parent */
+        height: 100%;
+        user-select: none;
+    }
 </style>

@@ -1,189 +1,80 @@
-<script>
+<script lang="js">
+  // @ts-nocheck
+  import StartMenu from "./lib/StartMenu.svelte";
   import Window from "./lib/Window.svelte";
 
-  import compA from "./lib/CompA.svelte";
-  import compB from "./lib/CompB.svelte";
+  // import list of open windows from store
+  import { openWindows } from "./store.js";
 
-  let windowTilesProps = [
-    {
-      content: compB,
-      contentProps: { propA: "propAafkjsldfkjsdlfij" },
-      visible: true,
-    },
-    { content: compA, contentProps: { propA: "propA" }, visible: true },
-    { content: compA, contentProps: { propA: "propA" }, visible: true },
-    { content: compB, contentProps: {}, visible: false },
-  ].map((i, index) => {
-    return { ...i, id: index };
-  });
-
-  let menu = ["item1", "item2", "item3", "item4", "item5"];
-  let isShowMenu = false;
-
-  let visibleItems = windowTilesProps.filter((i) => i.visible);
-  $: visibleItems = windowTilesProps.filter((i) => i.visible);
-
-  const createNewTile = () => {
-    windowTilesProps = [
-      ...windowTilesProps,
-      {
-        content: undefined,
-        contentProps: { propA: undefined },
-        visible: true,
-        id: Math.max(...windowTilesProps.map((i) => i.id)) + 1,
-      },
-    ];
-  };
-
-  const showMenu = () => {
-    isShowMenu = !isShowMenu;
-  };
-
-  const moveItemToLast = (index) => {
-    windowTilesProps.push(
-      windowTilesProps.splice(
-        windowTilesProps.findIndex((v) => v.id == index),
-        1
-      )[0]
-    );
-    windowTilesProps = windowTilesProps;
-  };
-  const moveItemToFirst = (index) => {
-    windowTilesProps.sort((a, b) => (a.id == index ? -1 : 1));
-    windowTilesProps = windowTilesProps;
-  };
-
-  const makeVisible = (index) => {
-    console.log(index);
-    let currentlyInFocus =
-      windowTilesProps[windowTilesProps.length - 1].id == index;
-    console.log(windowTilesProps[windowTilesProps.length - 1].id);
-    console.log(currentlyInFocus);
-    let vis =
-      windowTilesProps[windowTilesProps.findIndex((obj) => obj.id == index)]
-        .visible;
-
-    if (!currentlyInFocus && vis) {
-      moveItemToLast(index);
-    } else if (currentlyInFocus) {
-      windowTilesProps[
-        windowTilesProps.findIndex((obj) => obj.id == index)
-      ].visible = false;
-      moveItemToFirst(index);
-    } else if (!vis) {
-      windowTilesProps[
-        windowTilesProps.findIndex((obj) => obj.id == index)
-      ].visible = true;
-      moveItemToLast(index);
-    }
-  };
-  windowTilesProps = windowTilesProps;
+  let showMenu = false;
 </script>
 
-<section class="main">
-  {#each windowTilesProps as props, index (props.id)}
+<!-- Desktop.svelte -->
+<div class="desktop" on:click={() => (showMenu = false)}>
+  <div class="background" style={"color:white"} />
+
+  {#each $openWindows as window (window.id)}
     <Window
-      on:clicked={() => {
-        moveItemToLast(props.id);
-        windowTilesProps = windowTilesProps;
-      }}
-      content={props.content}
-      contentProps={props.contentProps}
-      bind:visible={props.visible}
-      zLevel={index + 1 == windowTilesProps.length ? 1 : 0.6}
-      on:close={(e) => {
-        windowTilesProps = windowTilesProps.filter(
-          (item) => item.id !== e.detail.id
-        );
-      }}
-      id={props.id}
+      title={window.app.name}
+      id={window.id}
+      component={window.app.component}
     />
   {/each}
-  <div class="icons" on:click={createNewTile}>icon</div>
+
   <div class="taskbar">
     <div
-      class="start-menu-button"
-      on:click={showMenu}
-      tabindex="-1"
-      on:blur={() => {
-        isShowMenu = false;
-      }}
+      class="startup-menu"
+      on:click|stopPropagation|self={() => (showMenu = !showMenu)}
     >
-      <h2>start</h2>
-      {#if isShowMenu}
-        <div class="start-menu">
-          {#each menu as item}
-            <div class="start-menu-item" on:click={createNewTile}>{item}</div>
-          {/each}
-        </div>
+      Start
+      {#if showMenu}
+        <StartMenu />
       {/if}
     </div>
-    {#each windowTilesProps.slice().sort((a, b) => {
-      return a.id > b.id ? 1 : -1;
-    }) as props, index (props.id)}
-      <div class="minimised-tile" on:click={() => makeVisible(props.id)}>
-        <div>
-          {props.id}
-        </div>
-      </div>
-    {/each}
   </div>
-</section>
+</div>
 
 <style>
-  .start-menu-item {
-    padding: 10px 70px;
-    background-color: red;
-    color: rgb(38, 38, 134);
-  }
-
-  .start-menu-item:hover {
-    background-color: white;
-  }
-
-  .start-menu {
-    display: flex;
-    flex-direction: column-reverse;
-    position: absolute;
-    bottom: 7vh;
-    width: 30px;
-    background-color: pink;
-  }
-  .start-menu-button {
-    width: 100px;
-    color: green;
-  }
-  .icons {
-    width: 100px;
-    height: 100px;
-    background-color: white;
-    position: absolute;
-    bottom: 300px;
-    left: 40px;
-  }
-  .minimised-tile {
-    width: 100px;
-    height: 100%;
-    margin-right: 30px;
-    background-color: bisque;
-    font-size: 12px;
-    color: black;
-  }
-  .taskbar {
-    width: 100%;
-    height: 7.5vh;
-    background-color: rgb(38, 38, 134);
-    display: flex;
-    flex-direction: row;
-  }
-  .main {
+  .desktop {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
     user-select: none;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
-    background-color: black;
-    min-height: 100vh;
+  }
+
+  .background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    filter: blur(5px);
+  }
+
+  .taskbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background: #0a27cc;
     display: flex;
-    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .startup-menu {
+    position: absolute;
+
+    left: 0;
+    height: 40px;
+    background: green;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
   }
 </style>
